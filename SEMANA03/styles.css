@@ -1,0 +1,42 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: left;
+    background-color: #f4f1ff;
+    margin: 30px;
+    padding: 0;
+}
+
+h1 {
+    background-color: #38cac3;
+    color: white;
+    padding: 20px;
+}
+
+h2 {
+    color: #995373;
+    text-align: left;
+}
+
+h3 {
+    color: #5c5555;
+    text-align: left;
+}
+
+p {
+    color: #333333;
+}
+
+table, th, td {
+    border: 1px solid rgb(23, 23, 26);
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 8px;
+    text-align: center;
+}
+form {
+    border: 3px solid #1cd4cb;
+    padding: 20px;
+    width: 320px;
+    }
