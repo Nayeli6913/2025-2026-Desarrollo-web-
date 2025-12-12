@@ -13,15 +13,30 @@ h1 {
 }
 
 h2 {
-    color: #d490b0;
+    color: #995373;
     text-align: left;
 }
 
 h3 {
-    color: #d49b9b;
+    color: #5c5555;
     text-align: left;
 }
 
 p {
     color: #333333;
 }
+
+table, th, td {
+    border: 1px solid rgb(23, 23, 26);
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 8px;
+    text-align: center;
+}
+form {
+    border: 3px solid #1cd4cb;
+    padding: 20px;
+    width: 320px;
+    }
