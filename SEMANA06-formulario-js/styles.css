@@ -1,0 +1,42 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f3f5f7c5;
+}
+
+form {
+    width: 350px;
+    margin: auto;
+    background: rgb(110, 209, 131);
+    padding: 20px;
+    border-radius: 8px;
+}
+
+label {
+    display: block;
+    margin-top: 10px;
+}
+
+input {
+    width: 100%;
+    padding: 6px;
+    margin-top: 4px;
+}
+
+input.valido {
+    border: 2px solid green;
+}
+
+input.invalido {
+    border: 2px solid red;
+}
+
+button {
+    margin-top: 15px;
+    padding: 8px;
+    width: 100%;
+}
+
+.error {
+    color: red;
+    font-size: 12px;
+}
