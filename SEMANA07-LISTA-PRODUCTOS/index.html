@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista de Productos</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        .contenedor {
+            width: 700px;
+            margin: 40px auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .producto {
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .producto strong {
+            font-size: 16px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 10px;
+            border-radius: 4px;
+            border: 1px solid #83b8c5;
+        }
+
+        button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 25px;
+            background-color: #0d6efd;
+            color: rgb(255, 255, 255);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0b5ed7;
+        }
+    </style>
+</head>
+<body>
+
+<div class="contenedor">
+
+    <h1>Lista de Productos</h1>
+
+    <div id="lista-productos"></div>
+
+    <h2>Agregar nuevo producto</h2>
+
+    <input type="text" id="nombre" placeholder="Nombre del producto">
+    <input type="number" id="precio" placeholder="Precio">
+    <input type="text" id="descripcion" placeholder="Descripción">
+
+    <button id="btnAgregar">Agregar producto</button>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
