@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+    <meta charset="UTF-8">
     <title>Biblioteca Virtual</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='estilo.css') }}">
 </head>
@@ -8,14 +9,15 @@
 
 <header>
     <h1>Biblioteca Virtual</h1>
-    <nav>
-        <a href="/">Inicio</a> |
-        <a href="/about">Acerca de</a> |
-        <a href="/libros">Libros</a> |
-        <a href="/autores">Autores</a> |
-        <a href="/prestamos">Préstamos</a>
-    </nav>
 </header>
+
+<nav>
+    <a href="/">Inicio</a> |
+    <a href="/about">Acerca de</a> |
+    <a href="/libros">Libros</a> |
+    <a href="/autores">Autores</a> |
+    <a href="/prestamos">Préstamos</a>
+</nav>
 
 <hr>
 
@@ -23,6 +25,7 @@
 {% endblock %}
 
 <hr>
+
 <footer>
     <p>© 2026 Biblioteca Virtual</p>
 </footer>
