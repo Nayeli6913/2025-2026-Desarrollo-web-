@@ -1,3 +1,4 @@
+import os
 from flask import Flask
 
 app = Flask(__name__)
@@ -6,9 +7,18 @@ app = Flask(__name__)
 def inicio():
     return 'Biblioteca Virtual – Consulta de libros'
 
-@app.route('/libro/<titulo>')
-def libro(titulo):
-    return f'Libro: {titulo} – consulta exitosa.'
+@app.route('/libros')
+def libros():
+    return 'Listado de libros'
+
+@app.route('/autores')
+def autores():
+    return 'Listado de autores'
+
+@app.route('/prestamos')
+def prestamos():
+    return 'Listado de préstamos'
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
