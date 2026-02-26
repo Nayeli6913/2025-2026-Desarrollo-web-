@@ -1,10 +1,11 @@
 body {
+    background-color: #f4f6f9;
     font-family: Arial, sans-serif;
-    background-color: #f2f2f2;
     margin: 0;
     padding: 0;
 }
 
+/* Encabezado */
 header {
     background-color: #2c3e50;
     color: white;
@@ -12,6 +13,7 @@ header {
     text-align: center;
 }
 
+/* Menú */
 nav {
     background-color: #34495e;
     padding: 10px;
@@ -29,15 +31,47 @@ nav a:hover {
     text-decoration: underline;
 }
 
-main {
-    padding: 20px;
+/* Contenido */
+h2 {
+    text-align: center;
+    margin-top: 20px;
 }
 
-footer {
-    background-color: #2c3e50;
+/* Tabla */
+table {
+    border-collapse: collapse;
+    width: 80%;
+    margin: 20px auto;
+    background-color: white;
+}
+
+th {
+    background-color: #2980b9;
     color: white;
+}
+
+td, th {
+    padding: 10px;
+    text-align: center;
+    border: 1px solid #ccc;
+}
+
+/* Botones */
+a {
+    color: #2980b9;
+    font-weight: bold;
+}
+
+a:hover {
+    color: #1c5985;
+}
+
+/* Footer */
+footer {
     text-align: center;
     padding: 10px;
+    background-color: #2c3e50;
+    color: white;
     position: fixed;
     bottom: 0;
     width: 100%;
