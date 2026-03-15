@@ -8,5 +8,10 @@
         "nombre": "vuela conmigo",
         "cantidad": "5",
         "precio": "12"
+    },
+    {
+        "nombre": "MIL A\u00d1OS",
+        "cantidad": "3",
+        "precio": "34"
     }
 ]
