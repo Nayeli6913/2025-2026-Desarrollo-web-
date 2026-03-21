@@ -1,10 +1,39 @@
-{% extends 'base.html' %}
-
+{% extends "base.html" %}
 {% block content %}
-<h2>Libros</h2>
-<ul>
-    <li>Cien Años de Soledad</li>
-    <li>Don Quijote de la Mancha</li>
-    <li>El Principito</li>
-</ul>
+
+<div class="container">
+    <!-- ENCABEZADO DE SECCIÓN -->
+    <div class="page-header" style="text-align: center; margin-bottom: 30px;">
+        <h2>Inventario de Libros</h2>
+        <a href="/agregar" class="btn-agregar" style="text-decoration: none; font-weight: bold;">➕ Agregar Nuevo Libro</a>
+    </div>
+
+    <!-- TABLA DE DATOS -->
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Cantidad</th>
+                <th>Precio</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in productos %}
+            <tr>
+                <td>{{p[0]}}</td>
+                <td>{{p[1]}}</td>
+                <td>{{p[2]}}</td>
+                <td>{{p[3]}}</td>
+                <td class="actions">
+                    <a href="/editar/{{p[0]}}">✏️ Editar</a> |
+                    <a href="/eliminar/{{p[0]}}">🗑️ Eliminar</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
 {% endblock %}

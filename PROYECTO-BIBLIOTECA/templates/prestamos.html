@@ -1,6 +1,35 @@
-{% extends 'base.html' %}
-
+{% extends "base.html" %}
 {% block content %}
+
 <h2>Préstamos</h2>
-<p>Listado de préstamos realizados por los usuarios.</p>
+
+<a href="/agregar_prestamo">➕ Agregar Préstamo</a>
+
+<br><br>
+
+<table border="1">
+<tr>
+    <th>ID</th>
+    <th>Usuario</th>
+    <th>Fecha de préstamo</th>
+    <th>Fecha de devolución</th>
+    <th>Acciones</th>
+</tr>
+
+{% for p in prestamos %}
+<tr>
+    <td>{{p[0]}}</td>
+    <td>{{p[1]}}</td>
+    <td>{{p[2]}}</td>
+    <td>{{p[3]}}</td>
+    <td>
+        <a href="/editar_prestamo/{{p[0]}}">✏️ Editar</a>
+        |
+        <a href="/eliminar_prestamo/{{p[0]}}">🗑️ Eliminar</a>
+    </td>
+</tr>
+{% endfor %}
+
+</table>
+
 {% endblock %}

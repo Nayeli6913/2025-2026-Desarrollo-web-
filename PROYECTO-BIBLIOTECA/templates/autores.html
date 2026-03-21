@@ -1,6 +1,35 @@
 {% extends "base.html" %}
-
 {% block content %}
+
 <h2>Autores</h2>
-<p>Listado de autores.</p>
+
+<a href="/agregar_autor">➕ Agregar Autor</a>
+
+<br><br>
+
+<table border="1">
+<tr>
+    <th>ID</th>
+    <th>Nombre</th>
+    <th>Nacionalidad</th>
+    <th>Género</th>
+    <th>Acciones</th>
+</tr>
+
+{% for a in autores %}
+<tr>
+    <td>{{a[0]}}</td>
+    <td>{{a[1]}}</td>
+    <td>{{a[2]}}</td>
+    <td>{{a[3]}}</td>
+    <td>
+        <a href="/editar_autor/{{a[0]}}">✏️ Editar</a>
+        |
+        <a href="/eliminar_autor/{{a[0]}}">🗑️ Eliminar</a>
+    </td>
+</tr>
+{% endfor %}
+
+</table>
+
 {% endblock %}

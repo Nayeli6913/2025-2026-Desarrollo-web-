@@ -1,78 +1,162 @@
+/* -------- GENERAL -------- */
 body {
+    font-family: 'Segoe UI', Arial, sans-serif;
     background-color: #f4f6f9;
-    font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
+    color: #333;
+    margin-bottom: 80px !important;
 }
 
-/* Encabezado */
-header {
-    background-color: #2c3e50;
+/* -------- NAVBAR DOS FILAS -------- */
+.navbar {
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(90deg, #2c3e50, #34495e);
+    color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    width: 100%;
+}
+
+.logo-row {
+    width: 100%;
+    text-align: center;
+    padding-top: 20px;
+    padding-bottom: 10px;
+}
+
+.logo {
+    font-size: 26px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.menu-row {
+    width: 100%;
+    text-align: center;
+    padding: 10px 0;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.menu {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+}
+
+.menu a {
+    color: #ecf0f1;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 15px;
+    transition: all 0.3s;
+    padding: 5px 10px;
+}
+
+.menu a:hover {
+    color: #1abc9c;
+    transform: scale(1.1);
+}
+
+.menu a:not(:last-child):after {
+    content: "|";
+    margin-left: 20px;
+    color: #5d6d7e;
+    font-weight: normal;
+}
+
+/* -------- CONTENEDOR Y TEXTOS -------- */
+.container {
+    padding: 40px 20px;
+    max-width: 1100px; /* Un poco más ancho para las tablas */
+    margin: 0 auto;
+    text-align: center; /* Títulos centrados como en tu imagen */
+}
+
+h2 {
+    color: #2c3e50;
+    font-size: 28px;
+    margin-bottom: 20px;
+}
+
+.btn-agregar {
+    display: inline-block;
+    margin-bottom: 25px;
+    color: #033366e3;
+    font-weight: bold;
+    text-decoration: none;
+    font-size: 16px;
+}
+
+/* -------- TABLAS (CORREGIDO) -------- */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    margin-top: 10px;
+}
+
+table th {
+    background-color: #34495e;
     color: white;
     padding: 15px;
+    text-transform: uppercase;
+    font-size: 14px;
     text-align: center;
 }
 
-/* Menú */
-nav {
-    background-color: #34495e;
-    padding: 10px;
+table td {
+    padding: 15px;
     text-align: center;
+    border-bottom: 1px solid #eee;
+    font-size: 15px;
 }
 
-nav a {
-    color: white;
-    margin: 0 10px;
+table tr:hover {
+    background-color: #f8f9fa; /* Efecto al pasar el mouse por la fila */
+}
+
+/* Acciones en la tabla */
+.actions a {
     text-decoration: none;
+    color: #007bff;
     font-weight: bold;
+    margin: 0 5px;
 }
 
-nav a:hover {
-    text-decoration: underline;
+.actions a:last-child {
+    color: #dc3545; /* Rojo para eliminar */
 }
 
-/* Contenido */
-h2 {
-    text-align: center;
-    margin-top: 20px;
+/* -------- PIE DE PÁGINA (MISMO AZUL QUE EL NAVBAR) -------- */
+#footer-azul {
+    /* Este es el color exacto que usas en el navbar arriba (#2c3e50) */
+    background-color: #2c3e50 !important; 
+    color: #ffffff !important;
+    text-align: center !important;
+    padding: 15px 0 !important;
+    width: 100% !important;
+    position: fixed !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    z-index: 9999 !important;
+    display: block !important;
+    /* Añadimos una sombra sutil para que se vea profesional */
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+    border-top: 1px solid rgba(255,255,255,0.1); /* Línea fina de separación */
 }
 
-/* Tabla */
-table {
-    border-collapse: collapse;
-    width: 80%;
-    margin: 20px auto;
-    background-color: white;
+#footer-azul p {
+    margin: 0 !important;
+    font-weight: 500 !important;
+    font-size: 14px !important;
+    letter-spacing: 0.5px;
 }
 
-th {
-    background-color: #2980b9;
-    color: white;
-}
-
-td, th {
-    padding: 10px;
-    text-align: center;
-    border: 1px solid #ccc;
-}
-
-/* Botones */
-a {
-    color: #2980b9;
-    font-weight: bold;
-}
-
-a:hover {
-    color: #1c5985;
-}
-
-/* Footer */
-footer {
-    text-align: center;
-    padding: 10px;
-    background-color: #2c3e50;
-    color: white;
-    position: fixed;
-    bottom: 0;
-    width: 100%;
+/* Espacio inferior para que el contenido no se oculte tras la barra */
+body {
+    margin-bottom: 70px !important;
 }

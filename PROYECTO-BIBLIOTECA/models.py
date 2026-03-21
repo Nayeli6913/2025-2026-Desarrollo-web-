@@ -1,3 +1,6 @@
+from flask_login import UserMixin
+
+# -------- TUS CLASES --------
 class Producto:
     def __init__(self, id, nombre, cantidad, precio):
         self.id = id
@@ -26,7 +29,7 @@ class Producto:
 
 class Inventario:
     def __init__(self):
-        self.productos = {}  # diccionario = colección
+        self.productos = {}
 
     def agregar_producto(self, producto):
         self.productos[producto.id] = producto
@@ -40,3 +43,12 @@ class Inventario:
 
     def mostrar_todos(self):
         return list(self.productos.values())
+
+
+# -------- 🔐 NUEVA CLASE (LOGIN) --------
+class Usuario(UserMixin):
+    def __init__(self, id, nombre, email, password):
+        self.id = id
+        self.nombre = nombre
+        self.email = email
+        self.password = password

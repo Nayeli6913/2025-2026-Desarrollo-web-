@@ -1,192 +1,387 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from conexion.conexion import conectar
-from inventario.inventario import guardar_txt, leer_txt, guardar_json, leer_json, guardar_csv, leer_csv
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from models import Usuario
+from werkzeug.security import generate_password_hash
 
 app = Flask(__name__)
-app.secret_key = "supersecretkey123"  # Necesario para usar flash messages
+app.secret_key = "supersecretkey123"
 
-# -------- FUNCIONES AUXILIARES --------
-def validar_producto(nombre, cantidad, precio):
-    """Valida que los datos del producto sean correctos"""
-    if not nombre.strip():
-        return False, "El nombre no puede estar vacío"
-    try:
-        cantidad = int(cantidad)
-        precio = float(precio)
-        if cantidad < 0 or precio < 0:
-            return False, "Cantidad y precio deben ser positivos"
-    except ValueError:
-        return False, "Cantidad debe ser entero y precio debe ser número"
-    return True, ""
+# -------- LOGIN CONFIG --------
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"
 
-# -------- INVENTARIO / CRUD --------
-@app.route('/')
-def inicio():
+@login_manager.user_loader
+def load_user(user_id):
     con = conectar()
-    if con is None:
-        return "Error conectando a la base de datos"
+    cursor = con.cursor()
+    cursor.execute("SELECT * FROM usuarios WHERE id_usuario = %s", (user_id,))
+    user = cursor.fetchone()
+    con.close()
+    if user:
+        return Usuario(user[0], user[1], user[2], user[3])
+    return None
 
-    try:
-        cur = con.cursor()
-        cur.execute("SELECT * FROM productos")
-        productos = cur.fetchall()
-    except Exception as e:
-        return f"Error al obtener productos: {e}"
-    finally:
+# -------- AUTENTICACIÓN --------
+
+@app.route('/registro', methods=['GET', 'POST'])
+def registro():
+    if request.method == 'POST':
+        nombre = request.form['nombre']
+        email = request.form['email']
+        password = request.form['password']
+
+        con = conectar()
+        cursor = con.cursor()
+        cursor.execute(
+            "INSERT INTO usuarios (nombre, email, password) VALUES (%s, %s, %s)",
+            (nombre, email, password)
+        )
+        con.commit()
         con.close()
 
-    return render_template("index.html", productos=productos)
+        flash("Usuario registrado correctamente")
+        return redirect(url_for('login'))
+
+    return render_template('registro.html')
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+
+        con = conectar()
+        cursor = con.cursor()
+        cursor.execute(
+            "SELECT * FROM usuarios WHERE email = %s AND password = %s",
+            (email, password)
+        )
+        user = cursor.fetchone()
+        con.close()
+
+        if user:
+            usuario = Usuario(user[0], user[1], user[2], user[3])
+            login_user(usuario)
+            return redirect(url_for('inicio'))
+        else:
+            flash("Correo o contraseña incorrectos")
+
+    return render_template('login.html')
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
+
+# -------- INICIO --------
+
+@app.route('/')
+@login_required
+def inicio():
+    return render_template("index.html")
+
+# -------- LIBROS --------
+
+@app.route('/libros')
+@login_required
+def libros():
+    con = conectar()
+    cur = con.cursor()
+    cur.execute("""
+    SELECT libros.id_libro, libros.nombre, libros.cantidad, libros.precio, autores.nombre
+    FROM libros
+    JOIN autores ON libros.id_autor = autores.id_autor
+    """)
+    lista_libros = cur.fetchall()
+    con.close()
+    return render_template("libros.html", productos=lista_libros)
 
 
 @app.route('/agregar', methods=["GET", "POST"])
+@login_required
 def agregar():
+    con = conectar()
+    cur = con.cursor()
+
+    if request.method == "POST":
+        nombre = request.form['nombre']
+        cantidad = request.form['cantidad']
+        precio = request.form['precio']
+        id_autor = request.form['id_autor']
+
+        cur.execute(
+            "INSERT INTO libros (nombre, cantidad, precio, id_autor) VALUES (%s, %s, %s, %s)",
+            (nombre, cantidad, precio, id_autor)
+        )
+        con.commit()
+        con.close()
+        return redirect(url_for("libros"))
+
+    cur.execute("SELECT * FROM autores")
+    autores = cur.fetchall()
+    con.close()
+
+    return render_template("agregar.html", autores=autores)
+
+
+@app.route('/editar/<int:id>', methods=["GET", "POST"])
+@login_required
+def editar(id):
+    con = conectar()
+    cur = con.cursor()
+
     if request.method == "POST":
         nombre = request.form['nombre']
         cantidad = request.form['cantidad']
         precio = request.form['precio']
 
-        valido, mensaje = validar_producto(nombre, cantidad, precio)
-        if not valido:
-            flash(mensaje, "error")
-            return redirect(url_for("agregar"))
-
-        con = conectar()
-        if con is None:
-            return "Error conectando a la base de datos"
-
-        try:
-            cur = con.cursor()
-            cur.execute(
-                "INSERT INTO productos (nombre, cantidad, precio) VALUES (%s, %s, %s)",
-                (nombre, cantidad, precio)
-            )
-            con.commit()
-        except Exception as e:
-            con.rollback()
-            return f"Error al insertar producto: {e}"
-        finally:
-            con.close()
-
-        # Guardar también en archivos
-        producto = {"nombre": nombre, "cantidad": cantidad, "precio": precio}
-        guardar_txt(producto)
-        guardar_json(producto)
-        guardar_csv(producto)
-
-        flash("Producto agregado correctamente", "success")
-        return redirect(url_for("inicio"))
-
-    return render_template("agregar.html")
-
-
-@app.route('/eliminar/<int:id>')
-def eliminar(id):
-    con = conectar()
-    if con is None:
-        return "Error conectando a la base de datos"
-
-    try:
-        cur = con.cursor()
-        cur.execute("DELETE FROM productos WHERE id=%s", (id,))
+        cur.execute(
+            "UPDATE libros SET nombre=%s, cantidad=%s, precio=%s WHERE id_libro=%s",
+            (nombre, cantidad, precio, id)
+        )
         con.commit()
-    except Exception as e:
-        con.rollback()
-        return f"Error al eliminar producto: {e}"
-    finally:
         con.close()
+        return redirect(url_for("libros"))
 
-    flash("Producto eliminado correctamente", "success")
-    return redirect(url_for("inicio"))
-
-
-@app.route('/editar/<int:id>', methods=["GET", "POST"])
-def editar(id):
-    con = conectar()
-    if con is None:
-        return "Error conectando a la base de datos"
-
-    try:
-        cur = con.cursor()
-        if request.method == "POST":
-            nombre = request.form['nombre']
-            cantidad = request.form['cantidad']
-            precio = request.form['precio']
-
-            valido, mensaje = validar_producto(nombre, cantidad, precio)
-            if not valido:
-                flash(mensaje, "error")
-                return redirect(url_for("editar", id=id))
-
-            cur.execute(
-                "UPDATE productos SET nombre=%s, cantidad=%s, precio=%s WHERE id=%s",
-                (nombre, cantidad, precio, id)
-            )
-            con.commit()
-            flash("Producto actualizado correctamente", "success")
-            return redirect(url_for("inicio"))
-
-        cur.execute("SELECT * FROM productos WHERE id=%s", (id,))
-        producto = cur.fetchone()
-        if producto is None:
-            return "Producto no encontrado"
-    except Exception as e:
-        return f"Error en la operación: {e}"
-    finally:
-        con.close()
+    cur.execute("SELECT * FROM libros WHERE id_libro=%s", (id,))
+    producto = cur.fetchone()
+    con.close()
 
     return render_template("editar.html", producto=producto)
 
 
-# -------- PÁGINAS DEL MENÚ --------
-@app.route('/about')
-def about():
-    return render_template('about.html')
+@app.route('/eliminar/<int:id>')
+@login_required
+def eliminar(id):
+    con = conectar()
+    cur = con.cursor()
+    cur.execute("DELETE FROM libros WHERE id_libro=%s", (id,))
+    con.commit()
+    con.close()
+    return redirect(url_for("libros"))
 
-@app.route('/libros')
-def libros():
-    return render_template('libros.html')
+# -------- AUTORES --------
 
 @app.route('/autores')
+@login_required
 def autores():
-    return render_template('autores.html')
+    con = conectar()
+    cur = con.cursor()
+    cur.execute("SELECT * FROM autores")
+    lista = cur.fetchall()
+    con.close()
+    return render_template('autores.html', autores=lista)
+
+
+@app.route('/agregar_autor', methods=["GET", "POST"])
+@login_required
+def agregar_autor():
+    if request.method == "POST":
+        nombre = request.form['nombre']
+        nacionalidad = request.form['nacionalidad']
+        genero = request.form['genero']
+
+        con = conectar()
+        cur = con.cursor()
+        cur.execute(
+            "INSERT INTO autores (nombre, nacionalidad, genero) VALUES (%s, %s, %s)",
+            (nombre, nacionalidad, genero)
+        )
+        con.commit()
+        con.close()
+        return redirect(url_for('autores'))
+
+    return render_template("agregar_autor.html")
+
+
+@app.route('/editar_autor/<int:id>', methods=["GET", "POST"])
+@login_required
+def editar_autor(id):
+    con = conectar()
+    cur = con.cursor()
+
+    if request.method == "POST":
+        nombre = request.form['nombre']
+        nacionalidad = request.form['nacionalidad']
+        genero = request.form['genero']
+
+        cur.execute(
+            "UPDATE autores SET nombre=%s, nacionalidad=%s, genero=%s WHERE id_autor=%s",
+            (nombre, nacionalidad, genero, id)
+        )
+        con.commit()
+        con.close()
+        return redirect(url_for('autores'))
+
+    cur.execute("SELECT * FROM autores WHERE id_autor=%s", (id,))
+    autor = cur.fetchone()
+    con.close()
+
+    return render_template("editar_autor.html", autor=autor)
+
+
+@app.route('/eliminar_autor/<int:id>')
+@login_required
+def eliminar_autor(id):
+    con = conectar()
+    cur = con.cursor()
+    cur.execute("DELETE FROM autores WHERE id_autor=%s", (id,))
+    con.commit()
+    con.close()
+    return redirect(url_for('autores'))
+
+# -------- PRESTAMOS --------
 
 @app.route('/prestamos')
+@login_required
 def prestamos():
-    return render_template('prestamos.html')
-
-
-# -------- MOSTRAR DATOS --------
-@app.route('/mostrar_datos')
-def mostrar_datos():
-    try:
-        txt = leer_txt()
-        json_data = leer_json()
-        csv_data = leer_csv()
-    except Exception as e:
-        return f"Error leyendo archivos: {e}"
-
     con = conectar()
-    if con is None:
-        return "Error conectando a la base de datos"
+    cur = con.cursor()
+    cur.execute("""
+    SELECT prestamos.id_prestamo, usuarios.nombre, prestamos.fecha_prestamo, prestamos.fecha_devolucion
+    FROM prestamos
+    JOIN usuarios ON prestamos.id_usuario = usuarios.id_usuario
+    """)
+    lista = cur.fetchall()
+    con.close()
+    return render_template('prestamos.html', prestamos=lista)
 
-    try:
+
+@app.route('/agregar_prestamo', methods=["GET", "POST"])
+@login_required
+def agregar_prestamo():
+    if request.method == "POST":
+        id_usuario = request.form['id_usuario']
+        fecha_prestamo = request.form['fecha_prestamo']
+        fecha_devolucion = request.form['fecha_devolucion']
+
+        con = conectar()
         cur = con.cursor()
-        cur.execute("SELECT * FROM productos")
-        db_data = cur.fetchall()
-    except Exception as e:
-        return f"Error al obtener productos: {e}"
-    finally:
+        cur.execute(
+            "INSERT INTO prestamos (id_usuario, fecha_prestamo, fecha_devolucion) VALUES (%s, %s, %s)",
+            (id_usuario, fecha_prestamo, fecha_devolucion)
+        )
+        con.commit()
         con.close()
+        return redirect(url_for('prestamos'))
 
-    return render_template(
-        "datos.html",
-        txt=txt,
-        json=json_data,
-        csv=csv_data,
-        db=db_data
-    )
+    return render_template("agregar_prestamo.html")
 
 
-# -------- EJECUTAR SERVIDOR --------
+@app.route('/editar_prestamo/<int:id>', methods=["GET", "POST"])
+@login_required
+def editar_prestamo(id):
+    con = conectar()
+    cur = con.cursor()
+
+    if request.method == "POST":
+        id_usuario = request.form['id_usuario']
+        fecha_prestamo = request.form['fecha_prestamo']
+        fecha_devolucion = request.form['fecha_devolucion']
+
+        cur.execute(
+            "UPDATE prestamos SET id_usuario=%s, fecha_prestamo=%s, fecha_devolucion=%s WHERE id_prestamo=%s",
+            (id_usuario, fecha_prestamo, fecha_devolucion, id)
+        )
+        con.commit()
+        con.close()
+        return redirect(url_for('prestamos'))
+
+    cur.execute("SELECT * FROM prestamos WHERE id_prestamo=%s", (id,))
+    prestamo = cur.fetchone()
+    con.close()
+
+    return render_template("editar_prestamo.html", prestamo=prestamo)
+
+
+@app.route('/eliminar_prestamo/<int:id>')
+@login_required
+def eliminar_prestamo(id):
+    con = conectar()
+    cur = con.cursor()
+    cur.execute("DELETE FROM prestamos WHERE id_prestamo=%s", (id,))
+    con.commit()
+    con.close()
+    return redirect(url_for('prestamos'))
+
+# -------- DETALLE --------
+
+@app.route('/detalle')
+@login_required
+def detalle():
+    con = conectar()
+    cur = con.cursor()
+    cur.execute("""
+    SELECT detalle_prestamos.id_detalle, libros.nombre, detalle_prestamos.cantidad
+    FROM detalle_prestamos
+    JOIN libros ON detalle_prestamos.id_libro = libros.id_libro
+    """)
+    lista = cur.fetchall()
+    con.close()
+    return render_template('detalle.html', detalle=lista)
+
+
+@app.route('/agregar_detalle', methods=["GET", "POST"])
+@login_required
+def agregar_detalle():
+    if request.method == "POST":
+        id_libro = request.form['id_libro']
+        cantidad = request.form['cantidad']
+
+        con = conectar()
+        cur = con.cursor()
+        cur.execute(
+            "INSERT INTO detalle_prestamos (id_libro, cantidad) VALUES (%s, %s)",
+            (id_libro, cantidad)
+        )
+        con.commit()
+        con.close()
+        return redirect(url_for('detalle'))
+
+    return render_template("agregar_detalle.html")
+
+
+@app.route('/editar_detalle/<int:id>', methods=["GET", "POST"])
+@login_required
+def editar_detalle(id):
+    con = conectar()
+    cur = con.cursor()
+
+    if request.method == "POST":
+        id_libro = request.form['id_libro']
+        cantidad = request.form['cantidad']
+
+        cur.execute(
+            "UPDATE detalle_prestamos SET id_libro=%s, cantidad=%s WHERE id_detalle=%s",
+            (id_libro, cantidad, id)
+        )
+        con.commit()
+        con.close()
+        return redirect(url_for('detalle'))
+
+    cur.execute("SELECT * FROM detalle_prestamos WHERE id_detalle=%s", (id,))
+    detalle = cur.fetchone()
+    con.close()
+
+    return render_template("editar_detalle.html", detalle=detalle)
+
+
+@app.route('/eliminar_detalle/<int:id>')
+@login_required
+def eliminar_detalle(id):
+    con = conectar()
+    cur = con.cursor()
+    cur.execute("DELETE FROM detalle_prestamos WHERE id_detalle=%s", (id,))
+    con.commit()
+    con.close()
+    return redirect(url_for('detalle'))
+
+# -------- RUN --------
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True)

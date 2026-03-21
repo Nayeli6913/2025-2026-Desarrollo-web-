@@ -4,30 +4,84 @@
     <meta charset="UTF-8">
     <title>Biblioteca Virtual</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='estilo.css') }}">
+    
+    <style>
+        #footer-azul {
+            background-color: #2c3e50 !important; 
+            color: white !important;
+            text-align: center !important;
+            padding: 15px 0 !important;
+            width: 100% !important;
+            position: fixed !important;
+            left: 0 !important;
+            bottom: 0 !important;
+            z-index: 9999 !important;
+            display: block !important;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+        }
+
+        #footer-azul p {
+            margin: 0 !important;
+            font-family: 'Segoe UI', Arial, sans-serif !important;
+            font-weight: bold !important;
+        }
+
+        body {
+            margin-bottom: 80px !important;
+        }
+
+        .usuario {
+            color: #fff;
+            margin-left: 15px;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
 
-<header>
-    <h1>Biblioteca Virtual</h1>
-</header>
+<!-- NAVBAR PRO -->
+<nav class="navbar">
 
-<nav>
-    <a href="/">Inicio</a> |
-    <a href="/about">Acerca de</a> |
-    <a href="/libros">Libros</a> |
-    <a href="/autores">Autores</a> |
-    <a href="/prestamos">Préstamos</a>
+    <!-- Logo -->
+    <div class="logo-row">
+        <div class="logo">📚 Biblioteca Virtual</div>
+    </div>
+
+    <!-- Menú -->
+    <div class="menu-row">
+        <div class="menu">
+            <a href="{{ url_for('inicio') }}">Inicio</a>
+            <a href="{{ url_for('libros') }}">Libros</a>
+            <a href="{{ url_for('autores') }}">Autores</a>
+            <a href="{{ url_for('prestamos') }}">Préstamos</a>
+            <a href="{{ url_for('detalle') }}">Detalle</a>
+
+            <!-- USUARIO (solo si está logueado) -->
+            {% if current_user.is_authenticated %}
+                <span class="usuario">👤 {{ current_user.nombre }}</span>
+            {% endif %}
+
+            <!-- SIEMPRE visibles -->
+            <a href="{{ url_for('login') }}">Login</a>
+            <a href="{{ url_for('registro') }}">Registro</a>
+
+            <!-- SOLO si está logueado -->
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('logout') }}">Salir</a>
+            {% endif %}
+
+        </div>
+    </div>
 </nav>
 
-<hr>
+<!-- CONTENIDO -->
+<div class="container">
+    {% block content %}{% endblock %}
+</div>
 
-{% block content %}
-{% endblock %}
-
-<hr>
-
-<footer>
-    <p>© 2026 Biblioteca Virtual</p>
+<!-- FOOTER -->
+<footer id="footer-azul">
+    <p>© 2026 Biblioteca Virtual Nayeli - Proyecto Flask</p>
 </footer>
 
 </body>

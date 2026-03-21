@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Detalle de Préstamos</h2>
+
+<a href="/agregar_detalle">➕ Agregar Detalle</a>
+
+<br><br>
+
+<table border="1">
+<tr>
+    <th>ID</th>
+    <th>Libro</th>
+    <th>Cantidad</th>
+    <th>Acciones</th>
+</tr>
+
+{% for d in detalle %}
+<tr>
+    <td>{{d[0]}}</td>
+    <td>{{d[1]}}</td>
+    <td>{{d[2]}}</td>
+    <td>
+        <a href="/editar_detalle/{{d[0]}}">✏️ Editar</a>
+        |
+        <a href="/eliminar_detalle/{{d[0]}}">🗑️ Eliminar</a>
+    </td>
+</tr>
+{% endfor %}
+
+</table>
+
+{% endblock %}
