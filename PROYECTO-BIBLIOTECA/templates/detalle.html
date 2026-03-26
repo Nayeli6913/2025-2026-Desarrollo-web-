@@ -1,33 +1,38 @@
 {% extends "base.html" %}
+
 {% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mb-4" style="color: #2c3e50; font-weight: bold;">Detalle de Préstamos</h1>
 
-<h2>Detalle de Préstamos</h2>
+    <div class="text-center mb-4">
+        <a href="{{ url_for('agregar_detalle') }}" style="text-decoration: none; font-weight: bold; color: #1a5276; font-size: 1.1rem;">
+            <span style="color: #9b59b6; font-size: 1.5rem; vertical-align: middle;">+</span> Asignar Libro a Préstamo
+        </a>
+    </div>
 
-<a href="/agregar_detalle">➕ Agregar Detalle</a>
-
-<br><br>
-
-<table border="1">
-<tr>
-    <th>ID</th>
-    <th>Libro</th>
-    <th>Cantidad</th>
-    <th>Acciones</th>
-</tr>
-
-{% for d in detalle %}
-<tr>
-    <td>{{d[0]}}</td>
-    <td>{{d[1]}}</td>
-    <td>{{d[2]}}</td>
-    <td>
-        <a href="/editar_detalle/{{d[0]}}">✏️ Editar</a>
-        |
-        <a href="/eliminar_detalle/{{d[0]}}">🗑️ Eliminar</a>
-    </td>
-</tr>
-{% endfor %}
-
-</table>
-
+    <div class="card shadow-sm border-0" style="border-radius: 15px;">
+        <div class="card-body p-0">
+            <table class="table mb-0">
+                <thead style="background-color: #34495e; color: white;">
+                    <tr class="text-center">
+                        <th style="border-top-left-radius: 15px;">ID</th>
+                        <th>ESTUDIANTE</th>
+                        <th>LIBRO</th>
+                        <th style="border-top-right-radius: 15px;">CANTIDAD</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in detalle %}
+                    <tr class="text-center align-middle">
+                        <td style="border-right: 1px solid #dee2e6;">{{ d[0] }}</td>
+                        <td class="text-start" style="border-right: 1px solid #dee2e6; padding-left: 20px;">{{ d[1] }}</td>
+                        <td class="text-start" style="border-right: 1px solid #dee2e6; padding-left: 20px;">{{ d[2] }}</td>
+                        <td>{{ d[3] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 {% endblock %}

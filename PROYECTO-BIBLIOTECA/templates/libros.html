@@ -1,39 +1,63 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="container">
-    <!-- ENCABEZADO DE SECCIÓN -->
-    <div class="page-header" style="text-align: center; margin-bottom: 30px;">
-        <h2>Inventario de Libros</h2>
-        <a href="/agregar" class="btn-agregar" style="text-decoration: none; font-weight: bold;">➕ Agregar Nuevo Libro</a>
+<div class="container mt-5">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">📚 Inventario de Libros</h2>
+        <div>
+            <a href="/agregar" class="btn btn-success fw-bold">➕ Agregar Nuevo Libro</a>
+            <a href="/reporte_libros" class="btn btn-danger ms-2">
+                📄 Descargar PDF
+            </a>
+        </div>
     </div>
 
-    <!-- TABLA DE DATOS -->
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Cantidad</th>
-                <th>Precio</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for p in productos %}
-            <tr>
-                <td>{{p[0]}}</td>
-                <td>{{p[1]}}</td>
-                <td>{{p[2]}}</td>
-                <td>{{p[3]}}</td>
-                <td class="actions">
-                    <a href="/editar/{{p[0]}}">✏️ Editar</a> |
-                    <a href="/eliminar/{{p[0]}}">🗑️ Eliminar</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="card shadow rounded overflow-hidden">
+        <table class="table table-hover table-striped mb-0 text-center align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Cantidad</th>
+                    <th>Precio</th>
+                    <th>Autor</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="table-group-divider">
+                {% for p in productos %}
+                <tr>
+                    <td class="fw-bold">{{p[0]}}</td>
+                    <td>{{p[1]}}</td>
+                    <td><span class="badge bg-info text-dark">{{p[2]}} unidades</span></td>
+                    <td>${{p[3]}}</td>
+                    <td><i class="text-muted">{{p[4]}}</i></td>
+                    <td>
+                        <a href="/editar/{{p[0]}}" class="btn btn-sm btn-outline-warning text-dark">✏️ Editar</a>
+                        <span class="text-muted mx-1">|</span>
+                        
+                        <a href="/eliminar/{{p[0]}}" 
+                           class="btn btn-sm btn-outline-danger"
+                           onclick="return confirm('⚠️ ¿Estás seguro de eliminar este libro?\n\nEsta acción no se puede deshacer.')">
+                           🗑️ Eliminar
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 {% endblock %}

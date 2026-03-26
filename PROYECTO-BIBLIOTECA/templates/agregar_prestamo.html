@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header text-white text-center" style="background-color: #34495e;">
+                    <h4><i class="fas fa-calendar-plus"></i> Registrar Nuevo Préstamo</h4>
+                </div>
+                <div class="card-body">
+                    <form action="/agregar_prestamo" method="POST">
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Seleccionar Estudiante:</label>
+                            <select name="id_estudiante" class="form-select" required>
+                                <option value="" disabled selected>Escoge un estudiante...</option>
+                                {% for e in estudiantes %}
+                                <option value="{{ e[0] }}">{{ e[1] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Fecha de Préstamo:</label>
+                            <input type="date" name="fecha_prestamo" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Fecha de Devolución:</label>
+                            <input type="date" name="fecha_devolucion" class="form-control" required>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Guardar Préstamo</button>
+                            <a href="{{ url_for('prestamos') }}" class="btn btn-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Esto pone la fecha de hoy automáticamente en el campo de préstamo
+    document.addEventListener('DOMContentLoaded', function() {
+        const hoy = new Date().toISOString().split('T')[0];
+        document.getElementsByName('fecha_prestamo')[0].value = hoy;
+    });
+</script>
+{% endblock %}

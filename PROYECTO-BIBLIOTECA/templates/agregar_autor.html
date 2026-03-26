@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow rounded">
+                <div class="card-header bg-dark text-white text-center">
+                    <h4 class="mb-0">Agregar Nuevo Autor</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form action="{{ url_for('agregar_autor') }}" method="POST">
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nombre del Autor:</label>
+                            <input type="text" name="nombre_autor" class="form-control" placeholder="Ej: Gabriel García Márquez" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nacionalidad:</label>
+                            <input type="text" name="nacionalidad" class="form-control" placeholder="Ej: Colombiano" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Género Literario:</label>
+                            <input type="text" name="genero_literario" class="form-control" placeholder="Ej: Realismo Mágico" required>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary">Guardar Autor</button>
+                            <a href="{{ url_for('autores') }}" class="btn btn-outline-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

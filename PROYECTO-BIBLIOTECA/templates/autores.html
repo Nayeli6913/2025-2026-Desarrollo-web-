@@ -1,35 +1,37 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2>Autores</h2>
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Listado de Autores</h2>
+        <a href="/agregar_autor" class="btn btn-success">➕ Agregar Nuevo Autor</a>
+    </div>
 
-<a href="/agregar_autor">➕ Agregar Autor</a>
-
-<br><br>
-
-<table border="1">
-<tr>
-    <th>ID</th>
-    <th>Nombre</th>
-    <th>Nacionalidad</th>
-    <th>Género</th>
-    <th>Acciones</th>
-</tr>
-
-{% for a in autores %}
-<tr>
-    <td>{{a[0]}}</td>
-    <td>{{a[1]}}</td>
-    <td>{{a[2]}}</td>
-    <td>{{a[3]}}</td>
-    <td>
-        <a href="/editar_autor/{{a[0]}}">✏️ Editar</a>
-        |
-        <a href="/eliminar_autor/{{a[0]}}">🗑️ Eliminar</a>
-    </td>
-</tr>
-{% endfor %}
-
-</table>
+    <div class="card shadow rounded overflow-hidden">
+        
+        <table class="table table-hover table-striped mb-0 text-center aling-middle">
+            
+            <thead class="table-dark">
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">NOMBRE</th>
+                    <th scope="col">NACIONALIDAD</th>
+                    <th scope="col">GÉNERO LITERARIO</th>
+                </tr>
+            </thead>
+            
+            <tbody class="table-group-divider">
+                {% for a in autores %}
+                <tr>
+                    <td>{{ a[0] }}</td>
+                    <td>{{ a[1] }}</td>
+                    <td>{{ a[2] }}</td>
+                    <td>{{ a[3] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 
 {% endblock %}

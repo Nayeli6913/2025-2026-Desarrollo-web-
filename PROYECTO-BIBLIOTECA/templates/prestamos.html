@@ -3,30 +3,26 @@
 
 <h2>Préstamos</h2>
 
-<a href="/agregar_prestamo">➕ Agregar Préstamo</a>
+<br><br>
 
+<!-- BOTÓN AGREGAR PRÉSTAMO -->
+<a href="{{ url_for('agregar_prestamo') }}" class="btn-agregar">➕ Agregar Préstamo</a>
 <br><br>
 
 <table border="1">
 <tr>
     <th>ID</th>
-    <th>Usuario</th>
+    <th>Estudiante</th>
     <th>Fecha de préstamo</th>
     <th>Fecha de devolución</th>
-    <th>Acciones</th>
 </tr>
 
 {% for p in prestamos %}
 <tr>
     <td>{{p[0]}}</td>
-    <td>{{p[1]}}</td>
+    <td>{{p[1]}}</td>  <!-- nombre del estudiante -->
     <td>{{p[2]}}</td>
     <td>{{p[3]}}</td>
-    <td>
-        <a href="/editar_prestamo/{{p[0]}}">✏️ Editar</a>
-        |
-        <a href="/eliminar_prestamo/{{p[0]}}">🗑️ Eliminar</a>
-    </td>
 </tr>
 {% endfor %}
 

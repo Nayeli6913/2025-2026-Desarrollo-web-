@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Editar Estudiante</h2>
+
+<form action="{{ url_for('editar_estudiante', id=estudiante[0]) }}" method="POST">
+    
+    <label for="nombre">Nombre:</label><br>
+    <input type="text" name="nombre" id="nombre" value="{{ estudiante[1] }}" required>
+    
+    <br><br>
+
+    <label for="correo">Correo Electrónico:</label><br>
+    <input type="email" name="correo" id="correo" value="{{ estudiante[2] }}" required>
+
+    <br><br>
+
+    <button type="submit">Actualizar Datos</button>
+    <a href="{{ url_for('estudiantes') }}">Cancelar</a>
+
+</form>
+
+{% endblock %}

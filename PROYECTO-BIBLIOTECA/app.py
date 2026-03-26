@@ -1,8 +1,16 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file
 from conexion.conexion import conectar
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from models import Usuario
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
+
+# --- IMPORTACIONES PARA REPORTE PROFESIONAL ---
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet
+from datetime import datetime
+from pymysql import IntegrityError
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey123"
@@ -30,7 +38,7 @@ def registro():
     if request.method == 'POST':
         nombre = request.form['nombre']
         email = request.form['email']
-        password = request.form['password']
+        password = generate_password_hash(request.form['password'])
 
         con = conectar()
         cursor = con.cursor()
@@ -56,13 +64,13 @@ def login():
         con = conectar()
         cursor = con.cursor()
         cursor.execute(
-            "SELECT * FROM usuarios WHERE email = %s AND password = %s",
-            (email, password)
+            "SELECT * FROM usuarios WHERE email = %s",
+            (email,)
         )
         user = cursor.fetchone()
         con.close()
 
-        if user:
+        if user and check_password_hash(user[3], password):
             usuario = Usuario(user[0], user[1], user[2], user[3])
             login_user(usuario)
             return redirect(url_for('inicio'))
@@ -81,8 +89,13 @@ def logout():
 # -------- INICIO --------
 
 @app.route('/')
-@login_required
 def inicio():
+    if not current_user.is_authenticated:
+        return redirect(url_for('home'))
+    return render_template("index.html")
+
+@app.route('/home')
+def home():
     return render_template("index.html")
 
 # -------- LIBROS --------
@@ -160,10 +173,76 @@ def editar(id):
 def eliminar(id):
     con = conectar()
     cur = con.cursor()
-    cur.execute("DELETE FROM libros WHERE id_libro=%s", (id,))
-    con.commit()
-    con.close()
+    
+    try:
+        # Intentamos eliminar el libro
+        cur.execute("DELETE FROM libros WHERE id_libro=%s", (id,))
+        con.commit()
+        flash("Libro eliminado correctamente", "success")
+        
+    except IntegrityError:
+        # Si el libro está prestado, MySQL lanzará este error
+        con.rollback() # Cancelamos el intento de borrado
+        flash("No se puede eliminar: Este libro tiene préstamos o detalles registrados.", "danger")
+        
+    except Exception as e:
+        # Para cualquier otro error inesperado (conexión, etc.)
+        con.rollback()
+        flash(f"Error inesperado: {str(e)}", "warning")
+        
+    finally:
+        # Cerramos la conexión siempre, pase lo que pase
+        con.close()
+        
     return redirect(url_for("libros"))
+
+# -------- 📄 REPORTE PDF PROFESIONAL --------
+
+@app.route("/reporte_libros")
+@login_required
+def reporte_libros():
+    conn = conectar()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT l.id_libro, l.nombre, l.cantidad, l.precio, a.nombre 
+        FROM libros l 
+        JOIN autores a ON l.id_autor = a.id_autor
+    """)
+    libros_db = cur.fetchall()
+    conn.close()
+
+    pdf_path = "reporte_libros.pdf"
+    doc = SimpleDocTemplate(pdf_path, pagesize=letter)
+    elementos = []
+    estilos = getSampleStyleSheet()
+
+    fecha = datetime.now().strftime('%d/%m/%Y %H:%M')
+    titulo = Paragraph("<b>SISTEMA DE BIBLIOTECA - REPORTE DE LIBROS</b>", estilos['Title'])
+    info = Paragraph(f"Generado por: {current_user.nombre} | Fecha: {fecha}", estilos['Normal'])
+    
+    elementos.append(titulo)
+    elementos.append(info)
+    elementos.append(Spacer(1, 20))
+
+    data = [["ID", "Título del Libro", "Cant.", "Precio", "Autor"]]
+    for l in libros_db:
+        data.append([l[0], l[1], l[2], f"${l[3]:.2f}", l[4]])
+
+    tabla = Table(data, colWidths=[30, 180, 50, 60, 140])
+    estilo = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2C3E50')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
+        ('GRID', (0, 0), (-1, -1), 1, colors.grey)
+    ])
+    tabla.setStyle(estilo)
+    elementos.append(tabla)
+
+    doc.build(elementos)
+    return send_file(pdf_path, as_attachment=True)
 
 # -------- AUTORES --------
 
@@ -177,64 +256,116 @@ def autores():
     con.close()
     return render_template('autores.html', autores=lista)
 
-
 @app.route('/agregar_autor', methods=["GET", "POST"])
 @login_required
 def agregar_autor():
     if request.method == "POST":
-        nombre = request.form['nombre']
+        # Capturamos los datos del formulario
+        # IMPORTANTE: Revisa que los nombres en [''] coincidan con el "name" de tu HTML
+        nombre = request.form['nombre_autor']
         nacionalidad = request.form['nacionalidad']
-        genero = request.form['genero']
+        genero = request.form['genero_literario']
 
         con = conectar()
         cur = con.cursor()
         cur.execute(
-            "INSERT INTO autores (nombre, nacionalidad, genero) VALUES (%s, %s, %s)",
+            "INSERT INTO autores (nombre, nacionalidad, genero_literario) VALUES (%s, %s, %s)",
             (nombre, nacionalidad, genero)
         )
         con.commit()
         con.close()
+        
+        flash("Autor agregado con éxito")
         return redirect(url_for('autores'))
 
-    return render_template("agregar_autor.html")
+    # Si entras por primera vez (GET), solo muestra el formulario
+    return render_template('agregar_autor.html')
 
+# -------- ESTUDIANTES --------
 
-@app.route('/editar_autor/<int:id>', methods=["GET", "POST"])
+@app.route('/estudiantes')
 @login_required
-def editar_autor(id):
+def estudiantes():
     con = conectar()
     cur = con.cursor()
+    cur.execute("SELECT * FROM estudiantes")
+    lista = cur.fetchall()
+    con.close()
+    return render_template('estudiantes.html', estudiantes=lista)
 
+
+@app.route('/agregar_estudiante', methods=["GET", "POST"])
+@login_required
+def agregar_estudiante():
     if request.method == "POST":
         nombre = request.form['nombre']
-        nacionalidad = request.form['nacionalidad']
-        genero = request.form['genero']
+        correo = request.form['correo']
 
+        con = conectar()
+        cur = con.cursor()
         cur.execute(
-            "UPDATE autores SET nombre=%s, nacionalidad=%s, genero=%s WHERE id_autor=%s",
-            (nombre, nacionalidad, genero, id)
+            "INSERT INTO estudiantes (nombre, correo) VALUES (%s, %s)",
+            (nombre, correo)
         )
         con.commit()
         con.close()
-        return redirect(url_for('autores'))
+        return redirect(url_for('estudiantes'))
 
-    cur.execute("SELECT * FROM autores WHERE id_autor=%s", (id,))
-    autor = cur.fetchone()
-    con.close()
-
-    return render_template("editar_autor.html", autor=autor)
+    return render_template("agregar_estudiante.html")
 
 
-@app.route('/eliminar_autor/<int:id>')
+@app.route('/editar_estudiante/<int:id>', methods=["GET", "POST"])
 @login_required
-def eliminar_autor(id):
+def editar_estudiante(id):
     con = conectar()
     cur = con.cursor()
-    cur.execute("DELETE FROM autores WHERE id_autor=%s", (id,))
-    con.commit()
-    con.close()
-    return redirect(url_for('autores'))
 
+    # Obtener datos actuales del estudiante
+    cur.execute("SELECT * FROM estudiantes WHERE id_estudiante = %s", (id,))
+    estudiante = cur.fetchone()
+
+    if request.method == "POST":
+        nombre = request.form['nombre']
+        correo = request.form['correo']
+
+        cur.execute(
+            "UPDATE estudiantes SET nombre=%s, correo=%s WHERE id_estudiante = %s",
+            (nombre, correo, id)
+        )
+        con.commit()
+        con.close()
+        return redirect(url_for('estudiantes'))
+
+    con.close()
+    return render_template("editar_estudiante.html", estudiante=estudiante)
+
+
+@app.route('/eliminar_estudiante/<int:id>')
+@login_required
+def eliminar_estudiante(id):
+    con = conectar()
+    cur = con.cursor()
+    
+    try:
+        # CAMBIO AQUÍ: Se eliminó la 's' de id_estudiante
+        cur.execute("DELETE FROM estudiantes WHERE id_estudiante = %s", (id,))
+        con.commit()
+        flash("Estudiante eliminado con éxito.", "success")
+        
+    except IntegrityError:
+        # Ahora sí, si tiene préstamos, entrará aquí y saldrá en ROJO
+        con.rollback()
+        flash("No se puede eliminar: El estudiante tiene préstamos registrados.", "danger")
+        
+    except Exception as e:
+        # Cualquier otro error técnico
+        con.rollback()
+        flash(f"Error técnico: {str(e)}", "warning")
+        
+    finally:
+        con.close()
+        
+    return redirect(url_for('estudiantes'))
 # -------- PRESTAMOS --------
 
 @app.route('/prestamos')
@@ -243,9 +374,9 @@ def prestamos():
     con = conectar()
     cur = con.cursor()
     cur.execute("""
-    SELECT prestamos.id_prestamo, usuarios.nombre, prestamos.fecha_prestamo, prestamos.fecha_devolucion
+    SELECT prestamos.id_prestamo, estudiantes.nombre, prestamos.fecha_prestamo, prestamos.fecha_devolucion
     FROM prestamos
-    JOIN usuarios ON prestamos.id_usuario = usuarios.id_usuario
+    JOIN estudiantes ON prestamos.id_estudiante = estudiantes.id_estudiante
     """)
     lista = cur.fetchall()
     con.close()
@@ -255,59 +386,30 @@ def prestamos():
 @app.route('/agregar_prestamo', methods=["GET", "POST"])
 @login_required
 def agregar_prestamo():
+    con = conectar()
+    cur = con.cursor()
+
+    cur.execute("SELECT * FROM estudiantes")
+    estudiantes = cur.fetchall()
+
     if request.method == "POST":
-        id_usuario = request.form['id_usuario']
+        id_estudiante = request.form['id_estudiante']
         fecha_prestamo = request.form['fecha_prestamo']
         fecha_devolucion = request.form['fecha_devolucion']
 
-        con = conectar()
-        cur = con.cursor()
         cur.execute(
-            "INSERT INTO prestamos (id_usuario, fecha_prestamo, fecha_devolucion) VALUES (%s, %s, %s)",
-            (id_usuario, fecha_prestamo, fecha_devolucion)
+            "INSERT INTO prestamos (id_estudiante, fecha_prestamo, fecha_devolucion) VALUES (%s, %s, %s)",
+            (id_estudiante, fecha_prestamo, fecha_devolucion)
         )
         con.commit()
         con.close()
         return redirect(url_for('prestamos'))
 
-    return render_template("agregar_prestamo.html")
-
-
-@app.route('/editar_prestamo/<int:id>', methods=["GET", "POST"])
-@login_required
-def editar_prestamo(id):
-    con = conectar()
-    cur = con.cursor()
-
-    if request.method == "POST":
-        id_usuario = request.form['id_usuario']
-        fecha_prestamo = request.form['fecha_prestamo']
-        fecha_devolucion = request.form['fecha_devolucion']
-
-        cur.execute(
-            "UPDATE prestamos SET id_usuario=%s, fecha_prestamo=%s, fecha_devolucion=%s WHERE id_prestamo=%s",
-            (id_usuario, fecha_prestamo, fecha_devolucion, id)
-        )
-        con.commit()
-        con.close()
-        return redirect(url_for('prestamos'))
-
-    cur.execute("SELECT * FROM prestamos WHERE id_prestamo=%s", (id,))
-    prestamo = cur.fetchone()
     con.close()
+    return render_template("agregar_prestamo.html", estudiantes=estudiantes)
 
-    return render_template("editar_prestamo.html", prestamo=prestamo)
 
-
-@app.route('/eliminar_prestamo/<int:id>')
-@login_required
-def eliminar_prestamo(id):
-    con = conectar()
-    cur = con.cursor()
-    cur.execute("DELETE FROM prestamos WHERE id_prestamo=%s", (id,))
-    con.commit()
-    con.close()
-    return redirect(url_for('prestamos'))
+# -------- DETALLE --------
 
 # -------- DETALLE --------
 
@@ -316,67 +418,49 @@ def eliminar_prestamo(id):
 def detalle():
     con = conectar()
     cur = con.cursor()
+    # Esta consulta une el detalle con estudiantes y libros para mostrar nombres en vez de IDs
     cur.execute("""
-    SELECT detalle_prestamos.id_detalle, libros.nombre, detalle_prestamos.cantidad
-    FROM detalle_prestamos
-    JOIN libros ON detalle_prestamos.id_libro = libros.id_libro
+    SELECT dp.id_detalle, e.nombre, l.nombre, dp.cantidad
+    FROM detalle_prestamos dp
+    JOIN prestamos p ON dp.id_prestamo = p.id_prestamo
+    JOIN estudiantes e ON p.id_estudiante = e.id_estudiante
+    JOIN libros l ON dp.id_libro = l.id_libro
     """)
     lista = cur.fetchall()
     con.close()
     return render_template('detalle.html', detalle=lista)
 
-
-@app.route('/agregar_detalle', methods=["GET", "POST"])
+@app.route('/agregar_detalle')
 @login_required
 def agregar_detalle():
-    if request.method == "POST":
-        id_libro = request.form['id_libro']
-        cantidad = request.form['cantidad']
-
-        con = conectar()
-        cur = con.cursor()
-        cur.execute(
-            "INSERT INTO detalle_prestamos (id_libro, cantidad) VALUES (%s, %s)",
-            (id_libro, cantidad)
-        )
-        con.commit()
-        con.close()
-        return redirect(url_for('detalle'))
-
-    return render_template("agregar_detalle.html")
-
-
-@app.route('/editar_detalle/<int:id>', methods=["GET", "POST"])
-@login_required
-def editar_detalle(id):
     con = conectar()
     cur = con.cursor()
-
-    if request.method == "POST":
-        id_libro = request.form['id_libro']
-        cantidad = request.form['cantidad']
-
-        cur.execute(
-            "UPDATE detalle_prestamos SET id_libro=%s, cantidad=%s WHERE id_detalle=%s",
-            (id_libro, cantidad, id)
-        )
-        con.commit()
-        con.close()
-        return redirect(url_for('detalle'))
-
-    cur.execute("SELECT * FROM detalle_prestamos WHERE id_detalle=%s", (id,))
-    detalle = cur.fetchone()
+    # Necesitamos los préstamos y los libros para los menús desplegables
+    cur.execute("""
+        SELECT p.id_prestamo, e.nombre 
+        FROM prestamos p 
+        JOIN estudiantes e ON p.id_estudiante = e.id_estudiante
+    """)
+    prestamos = cur.fetchall()
+    
+    cur.execute("SELECT id_libro, nombre FROM libros")
+    libros = cur.fetchall()
     con.close()
+    return render_template('agregar_detalle.html', prestamos=prestamos, libros=libros)
 
-    return render_template("editar_detalle.html", detalle=detalle)
-
-
-@app.route('/eliminar_detalle/<int:id>')
+@app.route('/guardar_detalle', methods=['POST'])
 @login_required
-def eliminar_detalle(id):
+def guardar_detalle():
+    id_prestamo = request.form['id_prestamo']
+    id_libro = request.form['id_libro']
+    cantidad = request.form['cantidad']
+
     con = conectar()
     cur = con.cursor()
-    cur.execute("DELETE FROM detalle_prestamos WHERE id_detalle=%s", (id,))
+    cur.execute(
+        "INSERT INTO detalle_prestamos (id_prestamo, id_libro, cantidad) VALUES (%s, %s, %s)",
+        (id_prestamo, id_libro, cantidad)
+    )
     con.commit()
     con.close()
     return redirect(url_for('detalle'))
