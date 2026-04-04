@@ -374,9 +374,10 @@ def prestamos():
     con = conectar()
     cur = con.cursor()
     cur.execute("""
-    SELECT prestamos.id_prestamo, estudiantes.nombre, prestamos.fecha_prestamo, prestamos.fecha_devolucion
+    SELECT prestamos.id_prestamo, estudiantes.nombre, libros.nombre, prestamos.fecha_prestamo, prestamos.fecha_devolucion
     FROM prestamos
     JOIN estudiantes ON prestamos.id_estudiante = estudiantes.id_estudiante
+    JOIN libros ON prestamos.id_libro = libros.id_libro
     """)
     lista = cur.fetchall()
     con.close()
@@ -392,24 +393,67 @@ def agregar_prestamo():
     cur.execute("SELECT * FROM estudiantes")
     estudiantes = cur.fetchall()
 
+    # 🔴 AGREGADO: obtener libros
+    cur.execute("SELECT * FROM libros")
+    libros = cur.fetchall()
+
     if request.method == "POST":
         id_estudiante = request.form['id_estudiante']
+        libro_id = request.form['libro_id']
         fecha_prestamo = request.form['fecha_prestamo']
         fecha_devolucion = request.form['fecha_devolucion']
 
+        # 🔴 VALIDAR STOCK
+        cur.execute("SELECT cantidad FROM libros WHERE id_libro = %s", (libro_id,))
+        stock = cur.fetchone()[0]
+
+        if stock <= 0:
+            con.close()
+            flash("No hay libros disponibles", "danger")
+            return redirect(url_for('agregar_prestamo'))
+            
+        # 🔴 INSERTAR PRÉSTAMO
         cur.execute(
-            "INSERT INTO prestamos (id_estudiante, fecha_prestamo, fecha_devolucion) VALUES (%s, %s, %s)",
-            (id_estudiante, fecha_prestamo, fecha_devolucion)
+            "INSERT INTO prestamos (id_estudiante, id_libro, fecha_prestamo, fecha_devolucion) VALUES (%s, %s, %s, %s)",
+            (id_estudiante, libro_id, fecha_prestamo, fecha_devolucion)
         )
+
+        # 🔴 DESCONTAR STOCK
+        cur.execute("UPDATE libros SET cantidad = cantidad - 1 WHERE id_libro = %s", (libro_id,))
+
         con.commit()
         con.close()
         return redirect(url_for('prestamos'))
 
     con.close()
-    return render_template("agregar_prestamo.html", estudiantes=estudiantes)
+    return render_template("agregar_prestamo.html", estudiantes=estudiantes, libros=libros)
 
 
-# -------- DETALLE --------
+# 🔴 AQUÍ VA LO QUE TE FALTABA (DEVOLVER LIBRO)
+@app.route('/devolver_libro/<int:id>')
+@login_required
+def devolver_libro(id):
+    con = conectar()
+    cur = con.cursor()
+
+    # Obtener el libro del préstamo
+    cur.execute("SELECT id_libro FROM prestamos WHERE id_prestamo = %s", (id,))
+    libro = cur.fetchone()
+
+    if libro:
+        libro_id = libro[0]
+
+        # Sumar stock
+        cur.execute("UPDATE libros SET cantidad = cantidad + 1 WHERE id_libro = %s", (libro_id,))
+
+        # Eliminar préstamo
+        cur.execute("DELETE FROM prestamos WHERE id_prestamo = %s", (id,))
+
+        con.commit()
+
+    con.close()
+    return redirect(url_for('prestamos'))
+
 
 # -------- DETALLE --------
 

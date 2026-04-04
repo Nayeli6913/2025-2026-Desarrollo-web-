@@ -13,16 +13,26 @@
 <tr>
     <th>ID</th>
     <th>Estudiante</th>
+    <th>Libro</th>
     <th>Fecha de préstamo</th>
     <th>Fecha de devolución</th>
+    <th>Acción</th> <!-- 🔴 AGREGADO -->
 </tr>
 
 {% for p in prestamos %}
 <tr>
     <td>{{p[0]}}</td>
     <td>{{p[1]}}</td>  <!-- nombre del estudiante -->
-    <td>{{p[2]}}</td>
+    <td>{{p[2]}}</td>  <!-- libro -->
     <td>{{p[3]}}</td>
+    <td>{{p[4]}}</td>
+
+    <!-- 🔴 BOTÓN DEVOLVER -->
+    <td>
+        <a href="{{ url_for('devolver_libro', id=p[0]) }}" class="btn btn-success btn-sm">
+            Devolver
+        </a>
+    </td>
 </tr>
 {% endfor %}
 

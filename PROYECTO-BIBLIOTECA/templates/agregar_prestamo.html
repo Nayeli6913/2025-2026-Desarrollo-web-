@@ -21,6 +21,17 @@
                             </select>
                         </div>
 
+                        <!-- 🔴 AQUÍ VA EL LIBRO (AGREGADO) -->
+                        <div class="mb-3">
+                            <label class="form-label">Seleccionar Libro:</label>
+                            <select name="libro_id" class="form-select" required>
+                                <option value="" disabled selected>Escoge un libro...</option>
+                                {% for l in libros %}
+                                <option value="{{ l[0] }}">{{ l[1] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
                         <div class="mb-3">
                             <label class="form-label">Fecha de Préstamo:</label>
                             <input type="date" name="fecha_prestamo" class="form-control" required>
